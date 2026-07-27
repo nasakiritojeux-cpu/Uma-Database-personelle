@@ -2,7 +2,47 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Suivi Trophées - Uma Musume</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uma Wiki Perso</title>
+
+<!-- ============================================================
+     FIREBASE SETUP — À FAIRE UNE SEULE FOIS :
+     1. Va sur https://console.firebase.google.com
+     2. Crée un projet (nom libre)
+     3. Dans le menu de gauche : Build > Firestore Database > Créer une base (mode test)
+     4. Dans les paramètres du projet (roue crantée) > "Vos applications" > ajoute une appli Web
+     5. Copie la config qu'on te donne et colle-la ci-dessous à la place de firebaseConfig
+     6. Dans Firestore > Règles, remplace par les règles fournies à côté (sécurité par code)
+     ============================================================ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // ⬇️⬇️⬇️ COLLE TA CONFIG FIREBASE ICI ⬇️⬇️⬇️
+  const firebaseConfig = {
+    apiKey: "AIzaSyBmGrfkYNnHvJ4A9P2Q04Eyvjl4PHmSg3o",
+    authDomain: "uma-pretty-derby.firebaseapp.com",
+    projectId: "uma-pretty-derby",
+    storageBucket: "uma-pretty-derby.firebasestorage.app",
+    messagingSenderId: "851180278019",
+    appId: "1:851180278019:web:2dacfeb8c3feee829cd936",
+    measurementId: "G-RD8BZ9K7ZG"
+  };
+  // ⬆️⬆️⬆️ FIN CONFIG ⬆️⬆️⬆️
+
+  let app, db, dbReady = false;
+  try {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    dbReady = true;
+  } catch(e) {
+    console.warn("Firebase pas encore configuré :", e);
+  }
+
+  window.__firebase = { db, doc, getDoc, setDoc, collection, getDocs, dbReady };
+  window.dispatchEvent(new Event("firebase-ready"));
+</script>
+
 <style>
   :root {
     --bg: #fdfaf5;
@@ -16,204 +56,97 @@
     --g2: #8c8c8c;
     --g3: #a05a2c;
     --accent: #e85d75;
+    --accent-dark: #c8455e;
     --text: #3a332a;
     --muted: #8a8072;
     --done-bg: #e6f4e8;
   }
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: "Segoe UI", "Hiragino Sans", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    padding: 20px;
-  }
-  h1 {
-    font-size: 1.4rem;
-    margin: 0 0 4px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 16px; }
-
-  .topbar {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    align-items: center;
-    margin-bottom: 16px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 14px;
-  }
-  select, input[type=text] {
-    font-size: 0.95rem;
-    padding: 7px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: #fff;
-    color: var(--text);
-  }
-  select#umaSelect { font-weight: 600; min-width: 180px; }
-  button {
-    cursor: pointer;
-    border: none;
-    border-radius: 8px;
-    padding: 7px 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    background: var(--accent);
-    color: white;
-  }
-  button.secondary {
-    background: #fff;
-    color: var(--accent);
-    border: 1px solid var(--accent);
-  }
-  .progress-wrap {
-    flex: 1;
-    min-width: 180px;
-  }
-  .progress-bar {
-    height: 10px;
-    background: var(--border);
-    border-radius: 6px;
-    overflow: hidden;
-    margin-top: 4px;
-  }
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), #f2a5b3);
-    transition: width 0.3s;
-  }
+  body { margin: 0; font-family: "Segoe UI", "Hiragino Sans", sans-serif; background: var(--bg); color: var(--text); }
+  #app { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  .topnav { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .topnav h1 { font-size: 1.3rem; margin: 0; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .nav-spacer { flex: 1; }
+  button { cursor: pointer; border: none; border-radius: 8px; padding: 8px 14px; font-size: 0.85rem; font-weight: 600; background: var(--accent); color: white; }
+  button:hover { background: var(--accent-dark); }
+  button.secondary { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+  button.secondary:hover { background: #fff5f6; }
+  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  input[type=text], input[type=number], input[type=color], textarea, select { font-size: 0.9rem; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: #fff; color: var(--text); font-family: inherit; }
+  textarea { width: 100%; resize: vertical; min-height: 90px; }
+  label { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; display:block; margin-bottom:4px; }
+  .field { margin-bottom: 12px; }
+  .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .field-row .field { flex: 1; min-width: 140px; }
+  .home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+  .uma-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+  .uma-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+  .uma-card .thumb { height: 130px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; color: #fff; font-weight: 800; position: relative; }
+  .uma-card .thumb img { width:100%; height:100%; object-fit: cover; }
+  .uma-card .info { padding: 10px 12px; }
+  .uma-card .name { font-weight: 700; font-size: 0.92rem; margin-bottom: 6px; }
+  .mini-bar { height: 6px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .mini-bar-fill { height: 100%; background: var(--accent); }
+  .mini-label { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+  .add-card { border: 2px dashed var(--border); border-radius: 14px; display: flex; align-items: center; justify-content: center; min-height: 190px; color: var(--muted); font-weight: 700; cursor: pointer; }
+  .add-card:hover { background: #fff; border-color: var(--accent); color: var(--accent); }
+  .sheet-header { display: flex; gap: 16px; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 18px; }
+  .sheet-thumb { width: 90px; height: 90px; border-radius: 12px; display: flex; align-items:center; justify-content:center; color: #fff; font-size: 1.8rem; font-weight: 800; flex-shrink: 0; overflow: hidden; }
+  .sheet-thumb img { width:100%; height:100%; object-fit:cover; }
+  .sheet-title { font-size: 1.3rem; font-weight: 800; }
+  .sheet-actions { margin-left: auto; display: flex; gap: 8px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab { padding: 7px 14px; border-radius: 999px; background: #fff; border: 1px solid var(--border); font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; }
+  .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+  .stat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .stat-name { width: 90px; font-size: 0.82rem; font-weight: 700; color: var(--muted); }
+  .stat-bar { flex: 1; height: 14px; background: var(--border); border-radius: 8px; overflow: hidden; }
+  .stat-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #f2a5b3); }
+  .stat-val { width: 40px; text-align: right; font-size: 0.85rem; font-weight: 700; }
+  .apt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px,1fr)); gap: 8px; margin-top: 14px; }
+  .apt-badge { text-align:center; border-radius: 8px; padding: 6px 4px; font-size: 0.75rem; font-weight: 700; border: 1px solid var(--border); }
+  .apt-badge .apt-label { font-size: 0.65rem; color: var(--muted); text-transform:uppercase; }
+  .apt-S{background:#fdeeb0;color:#8a6d00;} .apt-A{background:#ffd9d9;color:#b03030;}
+  .apt-B{background:#ffe7cf;color:#b3661a;} .apt-C{background:#fff6cf;color:#8a7a00;}
+  .apt-D{background:#e3f3e3;color:#3d7a3d;} .apt-E{background:#e0eefa;color:#2a5f8a;}
+  .apt-F{background:#eee;color:#888;} .apt-G{background:#eee;color:#aaa;}
+  .progress-wrap { margin-bottom: 14px; }
+  .progress-bar { height: 10px; background: var(--border); border-radius: 6px; overflow: hidden; margin-top: 4px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #f2a5b3); transition: width 0.3s; }
   .progress-label { font-size: 0.78rem; color: var(--muted); }
-
-  .filters {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 14px;
-  }
-  .chip {
-    padding: 5px 12px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: #fff;
-    font-size: 0.8rem;
-    cursor: pointer;
-    color: var(--muted);
-  }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .chip { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border); background: #fff; font-size: 0.8rem; cursor: pointer; color: var(--muted); }
   .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-
   .track-section { margin-bottom: 22px; }
-  .track-header {
-    font-size: 1.05rem;
-    font-weight: 700;
-    padding: 6px 12px;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    display: inline-block;
-  }
+  .track-header { font-size: 1.0rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; margin-bottom: 8px; display: inline-block; }
   .track-header.turf { background: var(--turf-bg); color: var(--turf); }
   .track-header.dirt { background: var(--dirt-bg); color: var(--dirt); }
-
   .dist-group { margin-bottom: 14px; margin-left: 4px; }
-  .dist-title {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin: 10px 0 6px 0;
-    border-bottom: 1px dashed var(--border);
-    padding-bottom: 4px;
-  }
-
-  .race-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-    gap: 8px;
-  }
-  .race-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 9px 11px;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    font-size: 0.85rem;
-    transition: background 0.15s, opacity 0.15s;
-    cursor: pointer;
-  }
-  .race-card.done {
-    background: var(--done-bg);
-    border-color: #b9ddc0;
-  }
+  .dist-title { font-size: 0.82rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 10px 0 6px 0; border-bottom: 1px dashed var(--border); padding-bottom: 4px; }
+  .race-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+  .race-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 9px 11px; display: flex; align-items: center; gap: 9px; font-size: 0.83rem; cursor: pointer; }
+  .race-card.done { background: var(--done-bg); border-color: #b9ddc0; }
   .race-card.done .race-name { text-decoration: line-through; opacity: 0.65; }
-  .race-card input { pointer-events: none; width: 16px; height: 16px; flex-shrink: 0; }
+  .race-card input { pointer-events: none; width: 15px; height: 15px; flex-shrink: 0; }
   .race-name { font-weight: 600; flex: 1; }
-  .grade-badge {
-    font-size: 0.68rem;
-    font-weight: 800;
-    padding: 2px 6px;
-    border-radius: 5px;
-    color: #fff;
-    flex-shrink: 0;
-  }
-  .grade-badge.G1 { background: var(--g1); }
-  .grade-badge.G2 { background: var(--g2); }
-  .grade-badge.G3 { background: var(--g3); }
-
-  .empty-msg {
-    color: var(--muted);
-    font-size: 0.85rem;
-    padding: 20px;
-    text-align: center;
-  }
-  #status {
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-left: auto;
-  }
+  .grade-badge { font-size: 0.66rem; font-weight: 800; padding: 2px 6px; border-radius: 5px; color: #fff; flex-shrink: 0; }
+  .grade-badge.G1 { background: var(--g1); } .grade-badge.G2 { background: var(--g2); } .grade-badge.G3 { background: var(--g3); }
+  .notes-box { white-space: pre-wrap; line-height: 1.5; font-size: 0.92rem; }
+  .empty-msg { color: var(--muted); font-size: 0.85rem; padding: 20px; text-align: center; }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .modal { background: #fff; border-radius: 14px; padding: 22px; max-width: 480px; width: 100%; max-height: 85vh; overflow-y: auto; }
+  .modal h2 { margin-top: 0; font-size: 1.1rem; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  #status { font-size: 0.72rem; color: var(--muted); }
+  .warn-banner { background: #fff3cd; border: 1px solid #ffe08a; color: #7a5c00; border-radius: 10px; padding: 10px 14px; font-size: 0.8rem; margin-bottom: 16px; }
 </style>
 </head>
 <body>
-
-<h1>🏆 Suivi Trophées par Uma</h1>
-<div class="subtitle">Coche les courses gagnées (G1/G2/G3) — trié par Piste → Distance → Groupe</div>
-
-<div class="topbar">
-  <select id="umaSelect"></select>
-  <button class="secondary" id="addUmaBtn">+ Ajouter une Uma</button>
-  <div class="progress-wrap">
-    <div class="progress-label" id="progressLabel">0 / 0 trophées</div>
-    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-  </div>
-  <span id="status"></span>
-</div>
-
-<div class="filters">
-  <span class="chip active" data-track="all">Tout</span>
-  <span class="chip" data-track="Turf">🌱 Turf</span>
-  <span class="chip" data-track="Dirt">🟤 Dirt</span>
-  <span class="chip" style="margin-left:14px" data-grade="all">Tous grades</span>
-  <span class="chip" data-grade="G1">G1</span>
-  <span class="chip" data-grade="G2">G2</span>
-  <span class="chip" data-grade="G3">G3</span>
-  <span class="chip" style="margin-left:14px" data-done="all">Tout afficher</span>
-  <span class="chip" data-done="todo">Manquantes seulement</span>
-</div>
-
-<div id="content"></div>
+<div id="app"></div>
 
 <script>
-// -------- Race database (Piste, Distance, Groupe) --------
-// Distance order: Sprint(~1000-1400) < Mile(~1400-1800) < Medium(~1800-2400) < Long(2400+)
 const RACES = [
-// TURF - SPRINT
 {n:"Hakodate Junior Stakes", t:"Turf", d:"Sprint", g:"G3"},
 {n:"Kokura Junior Stakes", t:"Turf", d:"Sprint", g:"G3"},
 {n:"Keio Hai Junior Stakes", t:"Turf", d:"Sprint", g:"G2"},
@@ -237,54 +170,30 @@ const RACES = [
 {n:"Keio Hai Spring Cup", t:"Turf", d:"Sprint", g:"G2"},
 {n:"Hakodate Sprint Stakes", t:"Turf", d:"Sprint", g:"G3"},
 {n:"Hanshin Cup", t:"Turf", d:"Sprint", g:"G2"},
-// TURF - MILE
 {n:"Niigata Junior Stakes", t:"Turf", d:"Mile", g:"G3"},
 {n:"Sapporo Junior Stakes", t:"Turf", d:"Mile", g:"G3"},
 {n:"Saudi Arabia Royal Cup", t:"Turf", d:"Mile", g:"G3"},
 {n:"Artemis Stakes", t:"Turf", d:"Mile", g:"G3"},
 {n:"Daily Hai Junior Stakes", t:"Turf", d:"Mile", g:"G2"},
-{n:"Tokyo Sports Hai Junior Stakes", t:"Turf", d:"Mile", g:"G3"},
-{n:"Hanshin Juvenile Fillies", t:"Turf", d:"Mile", g:"G1"},
 {n:"Asahi Hai Futurity Stakes", t:"Turf", d:"Mile", g:"G1"},
-{n:"Shinzan Kinen", t:"Turf", d:"Mile", g:"G3"},
-{n:"Fairy Stakes", t:"Turf", d:"Mile", g:"G3"},
-{n:"Kisaragi Sho", t:"Turf", d:"Mile", g:"G3"},
-{n:"Queen Cup", t:"Turf", d:"Mile", g:"G3"},
-{n:"Kyodo News Hai", t:"Turf", d:"Mile", g:"G3"},
-{n:"Tulip Sho", t:"Turf", d:"Mile", g:"G2"},
-{n:"Spring Stakes", t:"Turf", d:"Mile", g:"G2"},
-{n:"Flower Cup", t:"Turf", d:"Mile", g:"G3"},
-{n:"Mainichi Hai", t:"Turf", d:"Mile", g:"G3"},
-{n:"New Zealand Trophy", t:"Turf", d:"Mile", g:"G2"},
-{n:"Arlington Cup", t:"Turf", d:"Mile", g:"G3"},
-{n:"Oka Sho", t:"Turf", d:"Mile", g:"G1"},
-{n:"NHK Mile Cup", t:"Turf", d:"Mile", g:"G1"},
-{n:"Yasuda Kinen", t:"Turf", d:"Mile", g:"G1"},
-{n:"Epsom Cup", t:"Turf", d:"Mile", g:"G3"},
 {n:"Radio Nikkei Sho", t:"Turf", d:"Mile", g:"G3"},
-{n:"Chukyo Kinen", t:"Turf", d:"Mile", g:"G3"},
-{n:"Queen Stakes", t:"Turf", d:"Mile", g:"G3"},
+{n:"NHK Mile Cup", t:"Turf", d:"Mile", g:"G1"},
+{n:"Fillies' Revue Sports Nippon Sho", t:"Turf", d:"Mile", g:"G2"},
+{n:"Yasuda Kinen", t:"Turf", d:"Mile", g:"G1"},
+{n:"Kyoto Himba Tokubetsu", t:"Turf", d:"Mile", g:"G3"},
+{n:"TV Tokyo Hai", t:"Turf", d:"Mile", g:"G3"},
+{n:"Fukushima Himba Stakes", t:"Turf", d:"Mile", g:"G3"},
 {n:"Sekiya Kinen", t:"Turf", d:"Mile", g:"G3"},
-{n:"Rose Stakes", t:"Turf", d:"Mile", g:"G2"},
-{n:"Keisei Hai Autumn Handicap", t:"Turf", d:"Mile", g:"G3"},
+{n:"Kitakyushu Kinen (Mile)", t:"Turf", d:"Mile", g:"G3"},
 {n:"Mainichi Okan", t:"Turf", d:"Mile", g:"G2"},
-{n:"Fuchu Umamusume Stakes", t:"Turf", d:"Mile", g:"G2"},
 {n:"Fuji Stakes", t:"Turf", d:"Mile", g:"G2"},
 {n:"Mile Championship", t:"Turf", d:"Mile", g:"G1"},
-{n:"Nakayama Umamusume Stakes", t:"Turf", d:"Mile", g:"G3"},
-{n:"Turquoise Stakes", t:"Turf", d:"Mile", g:"G3"},
-{n:"Kyoto Kimpai", t:"Turf", d:"Mile", g:"G3"},
-{n:"Nakayama Kimpai", t:"Turf", d:"Mile", g:"G3" },
-{n:"Tokai Stakes", t:"Turf", d:"Mile", g:"G2"},
-{n:"American JCC (Jockey Club Cup)", t:"Turf", d:"Mile", g:"G2"},
-{n:"Tokyo Shimbun Hai", t:"Turf", d:"Mile", g:"G3"},
+{n:"Keihan Hai (Mile)", t:"Turf", d:"Mile", g:"G3"},
+{n:"Tokyo Himba Stakes", t:"Turf", d:"Mile", g:"G3"},
+{n:"Chunichi Shimbun Hai (Mile)", t:"Turf", d:"Mile", g:"G3"},
 {n:"Nakayama Kinen", t:"Turf", d:"Mile", g:"G2"},
-{n:"Kokura Daishoten", t:"Turf", d:"Mile", g:"G3"},
-{n:"Lord Derby Challenge Trophy", t:"Turf", d:"Mile", g:"G3"},
-{n:"Milers Cup (Yomiuri)", t:"Turf", d:"Mile", g:"G2"},
-{n:"Fukushima Umamusume Stakes", t:"Turf", d:"Mile", g:"G3"},
-{n:"Hanshin Umamusume Stakes", t:"Turf", d:"Mile", g:"G2"},
-// TURF - MEDIUM
+{n:"Arlington Cup", t:"Turf", d:"Mile", g:"G3"},
+{n:"Kyoto Kinen (Mile)", t:"Turf", d:"Mile", g:"G2"},
 {n:"Kyoto Junior Stakes", t:"Turf", d:"Medium", g:"G3"},
 {n:"Hopeful Stakes", t:"Turf", d:"Medium", g:"G1"},
 {n:"Keisei Hai", t:"Turf", d:"Medium", g:"G3"},
@@ -321,7 +230,6 @@ const RACES = [
 {n:"Kinko Sho", t:"Turf", d:"Medium", g:"G2"},
 {n:"Osaka Hai", t:"Turf", d:"Medium", g:"G1"},
 {n:"Niigata Daishoten", t:"Turf", d:"Medium", g:"G3"},
-// TURF - LONG
 {n:"Diamond Stakes", t:"Turf", d:"Long", g:"G3"},
 {n:"Kikuka Sho", t:"Turf", d:"Long", g:"G1"},
 {n:"Copa Republica Argentina", t:"Turf", d:"Long", g:"G2"},
@@ -331,12 +239,10 @@ const RACES = [
 {n:"Meguro Kinen", t:"Turf", d:"Long", g:"G2"},
 {n:"Hanshin Daishoten", t:"Turf", d:"Long", g:"G2"},
 {n:"Nikkei Sho", t:"Turf", d:"Long", g:"G2"},
-// DIRT - SPRINT
 {n:"Procyon Stakes", t:"Dirt", d:"Sprint", g:"G3"},
 {n:"JBC Sprint", t:"Dirt", d:"Sprint", g:"G1"},
 {n:"Capella Stakes", t:"Dirt", d:"Sprint", g:"G3"},
 {n:"Negishi Stakes", t:"Dirt", d:"Sprint", g:"G3"},
-// DIRT - MILE
 {n:"Unicorn Stakes", t:"Dirt", d:"Mile", g:"G3"},
 {n:"Leopard Stakes", t:"Dirt", d:"Mile", g:"G3"},
 {n:"Elm Stakes", t:"Dirt", d:"Mile", g:"G3"},
@@ -349,182 +255,354 @@ const RACES = [
 {n:"Tokai Stakes (Dirt)", t:"Dirt", d:"Mile", g:"G2"},
 {n:"Antares Stakes", t:"Dirt", d:"Mile", g:"G3"},
 {n:"February Stakes", t:"Dirt", d:"Mile", g:"G1"},
-// DIRT - MEDIUM
 {n:"Japan Dirt Derby", t:"Dirt", d:"Medium", g:"G1"},
 {n:"JBC Classic", t:"Dirt", d:"Medium", g:"G1"},
 {n:"Tokyo Daishoten", t:"Dirt", d:"Medium", g:"G1"},
 {n:"Heian Stakes", t:"Dirt", d:"Medium", g:"G3"},
 {n:"Teio Sho", t:"Dirt", d:"Medium", g:"G1"},
 ];
-
 const DIST_ORDER = ["Sprint","Mile","Medium","Long"];
 const TRACK_ORDER = ["Turf","Dirt"];
+const APT_LETTERS = ["S","A","B","C","D","E","F","G"];
 
-// -------- State --------
-let umas = ["Mayano Top Gun"];
-let currentUma = "Mayano Top Gun";
-let progress = {}; // {umaName: {raceName: true}}
-let filterTrack = "all";
-let filterGrade = "all";
-let filterDone = "all";
+let umas = {};
+let currentId = null;
+let view = "home";
+let sheetTab = "stats";
+let filterTrack = "all", filterGrade = "all", filterDone = "all";
+let accessCode = localStorage.getItem("uma_wiki_code") || "";
 
 const el = id => document.getElementById(id);
+const app = () => document.getElementById("app");
 
-async function loadState() {
-  try {
-    const res = await window.storage.get("uma_trophy_state");
-    if (res && res.value) {
-      const parsed = JSON.parse(res.value);
-      umas = parsed.umas || umas;
-      currentUma = parsed.currentUma || currentUma;
-      progress = parsed.progress || {};
-    }
-  } catch(e) { /* first run, no data yet */ }
+function slug(name) {
+  return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
 }
 
-async function saveState() {
-  el("status").textContent = "sauvegarde...";
+function fb() { return window.__firebase; }
+
+async function loadAll() {
+  if (!fb() || !fb().dbReady || !accessCode) return;
   try {
-    await window.storage.set("uma_trophy_state", JSON.stringify({umas, currentUma, progress}));
-    el("status").textContent = "✓ sauvegardé";
-    setTimeout(()=> el("status").textContent = "", 1200);
+    const snap = await fb().getDocs(fb().collection(fb().db, "codes", accessCode, "umas"));
+    umas = {};
+    snap.forEach(d => umas[d.id] = d.data());
   } catch(e) {
-    el("status").textContent = "erreur de sauvegarde";
+    console.error("Erreur de chargement Firestore", e);
+    setStatus("erreur de chargement");
   }
 }
 
-function renderUmaSelect() {
-  const sel = el("umaSelect");
-  sel.innerHTML = "";
-  umas.forEach(u => {
-    const opt = document.createElement("option");
-    opt.value = u; opt.textContent = u;
-    if (u === currentUma) opt.selected = true;
-    sel.appendChild(opt);
-  });
+async function saveUma(id) {
+  if (!fb() || !fb().dbReady || !accessCode) { setStatus("stockage non configuré"); return; }
+  setStatus("sauvegarde...");
+  try {
+    await fb().setDoc(fb().doc(fb().db, "codes", accessCode, "umas", id), umas[id]);
+    setStatus("✓ sauvegardé");
+    setTimeout(()=>setStatus(""), 1200);
+  } catch(e) {
+    console.error(e);
+    setStatus("erreur de sauvegarde");
+  }
 }
 
-function toggleRace(name) {
-  if (!progress[currentUma]) progress[currentUma] = {};
-  progress[currentUma][name] = !progress[currentUma][name];
-  render();
-  saveState();
-}
+function setStatus(t) { const s = el("status"); if (s) s.textContent = t; }
 
 function render() {
-  const content = el("content");
-  content.innerHTML = "";
-  const doneMap = progress[currentUma] || {};
+  if (!accessCode) { renderCodeGate(); return; }
+  const root = app();
+  root.innerHTML = `
+    <div class="topnav">
+      <h1 onclick="goHome()">🏆 Uma Wiki Perso</h1>
+      <div class="nav-spacer"></div>
+      <span id="status"></span>
+      <button class="ghost" onclick="changeCode()">Changer de code</button>
+    </div>
+    ${!fb() || !fb().dbReady ? `<div class="warn-banner">⚠️ Firebase n'est pas encore configuré dans le fichier (config vide). Les données ne seront pas sauvegardées tant que tu n'as pas collé ta config Firebase en haut du fichier HTML.</div>` : ""}
+    <div id="view"></div>
+  `;
+  if (view === "home") renderHome();
+  else renderSheet();
+}
 
+function renderCodeGate() {
+  app().innerHTML = `
+    <div style="max-width:420px;margin:60px auto;text-align:center;">
+      <h1>🏆 Uma Wiki Perso</h1>
+      <p style="color:var(--muted);font-size:0.9rem;">Entre ton code d'accès perso. Le même code sur n'importe quel navigateur retrouve tes données.</p>
+      <div class="field" style="text-align:left;">
+        <label>Code d'accès</label>
+        <input type="text" id="codeInput" placeholder="ex: vega-derby-42" style="width:100%">
+      </div>
+      <button onclick="submitCode()" style="width:100%;margin-top:8px;">Valider</button>
+    </div>
+  `;
+  el("codeInput").addEventListener("keydown", e => { if (e.key==="Enter") submitCode(); });
+}
+
+window.submitCode = async function() {
+  const v = el("codeInput").value.trim();
+  if (!v) return;
+  accessCode = v;
+  localStorage.setItem("uma_wiki_code", v);
+  await loadAll();
+  render();
+};
+
+window.changeCode = function() {
+  if (!confirm("Changer de code va recharger une autre base de données. Continuer ?")) return;
+  accessCode = "";
+  localStorage.removeItem("uma_wiki_code");
+  umas = {};
+  view = "home";
+  render();
+};
+
+window.goHome = function() { view = "home"; render(); };
+
+function renderHome() {
+  const v = el("view");
+  const cards = Object.entries(umas).map(([id,u]) => {
+    const trophyCount = Object.values(u.trophies||{}).filter(Boolean).length;
+    const pct = RACES.length ? Math.round(trophyCount/RACES.length*100) : 0;
+    const color = u.color || "#4a6fa5";
+    const thumb = u.imageUrl
+      ? `<img src="${escapeHtml(u.imageUrl)}" onerror="this.style.display='none'">`
+      : (u.name||"?").slice(0,2).toUpperCase();
+    return `
+      <div class="uma-card" onclick="openUma('${id}')">
+        <div class="thumb" style="background:${color}">${thumb}</div>
+        <div class="info">
+          <div class="name">${escapeHtml(u.name)}</div>
+          <div class="mini-bar"><div class="mini-bar-fill" style="width:${pct}%"></div></div>
+          <div class="mini-label">${trophyCount}/${RACES.length} trophées</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+  v.innerHTML = `
+    <div class="home-grid">
+      ${cards}
+      <div class="add-card" onclick="openAddModal()">+ Ajouter une Uma</div>
+    </div>
+  `;
+}
+
+window.openAddModal = function() {
+  showModal(`
+    <h2>Nouvelle Uma</h2>
+    <div class="field"><label>Nom</label><input type="text" id="newName" style="width:100%" placeholder="ex: Admire Vega"></div>
+    <div class="field"><label>Couleur principale</label><input type="color" id="newColor" value="#4a6fa5"></div>
+  `, () => {
+    const name = el("newName").value.trim();
+    if (!name) return false;
+    const id = slug(name) + "-" + Date.now().toString(36).slice(-4);
+    umas[id] = {
+      name, color: el("newColor").value, imageUrl: "",
+      stats: {speed:0,stamina:0,power:0,guts:0,wit:0},
+      aptitudes: {turf:"G",dirt:"G",short:"G",mile:"G",medium:"G",long:"G",front:"G",pace:"G",late:"G",end:"G"},
+      trophies: {}, notes: ""
+    };
+    saveUma(id);
+    currentId = id; view = "sheet"; sheetTab = "stats";
+    render();
+    return true;
+  });
+};
+
+window.openUma = function(id) { currentId = id; view = "sheet"; sheetTab = "stats"; render(); };
+
+function renderSheet() {
+  const u = umas[currentId];
+  if (!u) { view = "home"; render(); return; }
+  const v = el("view");
+  const thumb = u.imageUrl
+    ? `<img src="${escapeHtml(u.imageUrl)}" onerror="this.style.display='none'">`
+    : (u.name||"?").slice(0,2).toUpperCase();
+  v.innerHTML = `
+    <div class="sheet-header">
+      <div class="sheet-thumb" style="background:${u.color||'#4a6fa5'}">${thumb}</div>
+      <div><div class="sheet-title">${escapeHtml(u.name)}</div></div>
+      <div class="sheet-actions">
+        <button class="secondary" onclick="openEditModal()">Modifier</button>
+        <button class="ghost" onclick="deleteUma()">Supprimer</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab ${sheetTab==='stats'?'active':''}" onclick="switchTab('stats')">📊 Stats</div>
+      <div class="tab ${sheetTab==='trophies'?'active':''}" onclick="switchTab('trophies')">🏆 Trophées</div>
+      <div class="tab ${sheetTab==='notes'?'active':''}" onclick="switchTab('notes')">📝 Notes</div>
+    </div>
+    <div class="panel" id="tabPanel"></div>
+  `;
+  renderTabPanel();
+}
+
+window.switchTab = function(t) { sheetTab = t; renderSheet(); };
+
+function renderTabPanel() {
+  const u = umas[currentId];
+  const p = el("tabPanel");
+  if (sheetTab === "stats") {
+    const s = u.stats || {};
+    const statNames = {speed:"Vitesse",stamina:"Endurance",power:"Puissance",guts:"VE",wit:"Sagesse"};
+    const statRows = Object.entries(statNames).map(([k,label]) => {
+      const val = s[k]||0;
+      return `<div class="stat-row"><div class="stat-name">${label}</div><div class="stat-bar"><div class="stat-bar-fill" style="width:${Math.min(val/1200*100,100)}%"></div></div><div class="stat-val">${val}</div></div>`;
+    }).join("");
+    const a = u.aptitudes || {};
+    const aptNames = {turf:"Turf",dirt:"Dirt",short:"Sprint",mile:"Mile",medium:"Medium",long:"Long",front:"Front",pace:"Pace",late:"Late",end:"End"};
+    const aptBadges = Object.entries(aptNames).map(([k,label]) => {
+      const letter = a[k]||"G";
+      return `<div class="apt-badge apt-${letter}"><div class="apt-label">${label}</div>${letter}</div>`;
+    }).join("");
+    p.innerHTML = `${statRows}<div class="apt-grid">${aptBadges}</div>`;
+  } else if (sheetTab === "trophies") {
+    renderTrophyPanel(p);
+  } else if (sheetTab === "notes") {
+    p.innerHTML = `
+      <div class="field"><label>Notes perso (lore, avis, favoris...)</label><textarea id="notesArea" rows="10">${escapeHtml(u.notes||"")}</textarea></div>
+      <button onclick="saveNotes()">Enregistrer les notes</button>
+    `;
+  }
+}
+
+window.saveNotes = function() {
+  umas[currentId].notes = el("notesArea").value;
+  saveUma(currentId);
+};
+
+function renderTrophyPanel(p) {
+  const u = umas[currentId];
+  const doneMap = u.trophies || {};
   let filtered = RACES.filter(r => {
     if (filterTrack !== "all" && r.t !== filterTrack) return false;
     if (filterGrade !== "all" && r.g !== filterGrade) return false;
     if (filterDone === "todo" && doneMap[r.n]) return false;
     return true;
   });
+  const totalCount = RACES.length;
+  const doneCount = RACES.filter(r => doneMap[r.n]).length;
 
-  let totalCount = RACES.length;
-  let doneCount = RACES.filter(r => doneMap[r.n]).length;
-  el("progressLabel").textContent = `${doneCount} / ${totalCount} trophées obtenus (${currentUma})`;
-  el("progressFill").style.width = totalCount ? (doneCount/totalCount*100)+"%" : "0%";
+  let html = `
+    <div class="progress-wrap">
+      <div class="progress-label">${doneCount} / ${totalCount} trophées obtenus</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${totalCount?doneCount/totalCount*100:0}%"></div></div>
+    </div>
+    <div class="filters">
+      <span class="chip ${filterTrack==='all'?'active':''}" onclick="setFilter('track','all')">Tout</span>
+      <span class="chip ${filterTrack==='Turf'?'active':''}" onclick="setFilter('track','Turf')">🌱 Turf</span>
+      <span class="chip ${filterTrack==='Dirt'?'active':''}" onclick="setFilter('track','Dirt')">🟤 Dirt</span>
+      <span class="chip ${filterGrade==='all'?'active':''}" style="margin-left:14px" onclick="setFilter('grade','all')">Tous grades</span>
+      <span class="chip ${filterGrade==='G1'?'active':''}" onclick="setFilter('grade','G1')">G1</span>
+      <span class="chip ${filterGrade==='G2'?'active':''}" onclick="setFilter('grade','G2')">G2</span>
+      <span class="chip ${filterGrade==='G3'?'active':''}" onclick="setFilter('grade','G3')">G3</span>
+      <span class="chip ${filterDone==='all'?'active':''}" style="margin-left:14px" onclick="setFilter('done','all')">Tout afficher</span>
+      <span class="chip ${filterDone==='todo'?'active':''}" onclick="setFilter('done','todo')">Manquantes</span>
+    </div>
+  `;
 
   if (filtered.length === 0) {
-    content.innerHTML = `<div class="empty-msg">Aucune course ne correspond aux filtres 🎉</div>`;
-    return;
-  }
-
-  TRACK_ORDER.forEach(track => {
-    const trackRaces = filtered.filter(r => r.t === track);
-    if (trackRaces.length === 0) return;
-    const section = document.createElement("div");
-    section.className = "track-section";
-    const header = document.createElement("div");
-    header.className = "track-header " + track.toLowerCase();
-    header.textContent = (track === "Turf" ? "🌱 " : "🟤 ") + track;
-    section.appendChild(header);
-
-    DIST_ORDER.forEach(dist => {
-      const distRaces = trackRaces.filter(r => r.d === dist)
-        .sort((a,b) => (a.g > b.g ? 1 : -1));
-      if (distRaces.length === 0) return;
-      const distGroup = document.createElement("div");
-      distGroup.className = "dist-group";
-      const distTitle = document.createElement("div");
-      distTitle.className = "dist-title";
-      const doneInDist = distRaces.filter(r => doneMap[r.n]).length;
-      distTitle.textContent = `${dist} (${doneInDist}/${distRaces.length})`;
-      distGroup.appendChild(distTitle);
-
-      const grid = document.createElement("div");
-      grid.className = "race-grid";
-      distRaces.forEach(r => {
-        const isDone = !!doneMap[r.n];
-        const card = document.createElement("div");
-        card.className = "race-card" + (isDone ? " done" : "");
-        card.innerHTML = `
-          <input type="checkbox" ${isDone ? "checked" : ""}>
-          <span class="race-name">${r.n}</span>
-          <span class="grade-badge ${r.g}">${r.g}</span>
-        `;
-        card.onclick = () => toggleRace(r.n);
-        grid.appendChild(card);
+    html += `<div class="empty-msg">Aucune course ne correspond aux filtres 🎉</div>`;
+  } else {
+    TRACK_ORDER.forEach(track => {
+      const trackRaces = filtered.filter(r => r.t === track);
+      if (trackRaces.length === 0) return;
+      html += `<div class="track-section"><div class="track-header ${track.toLowerCase()}">${track==="Turf"?"🌱 ":"🟤 "}${track}</div>`;
+      DIST_ORDER.forEach(dist => {
+        const distRaces = trackRaces.filter(r => r.d === dist).sort((a,b)=> a.g > b.g ? 1 : -1);
+        if (distRaces.length === 0) return;
+        const doneInDist = distRaces.filter(r => doneMap[r.n]).length;
+        html += `<div class="dist-group"><div class="dist-title">${dist} (${doneInDist}/${distRaces.length})</div><div class="race-grid">`;
+        distRaces.forEach(r => {
+          const isDone = !!doneMap[r.n];
+          html += `<div class="race-card ${isDone?'done':''}" onclick="toggleRace('${escapeAttr(r.n)}')"><input type="checkbox" ${isDone?"checked":""}><span class="race-name">${escapeHtml(r.n)}</span><span class="grade-badge ${r.g}">${r.g}</span></div>`;
+        });
+        html += `</div></div>`;
       });
-      distGroup.appendChild(grid);
-      section.appendChild(distGroup);
+      html += `</div>`;
     });
-    content.appendChild(section);
-  });
+  }
+  p.innerHTML = html;
 }
 
-// -------- Events --------
-el("umaSelect").addEventListener("change", e => {
-  currentUma = e.target.value;
+window.setFilter = function(type, val) {
+  if (type==="track") filterTrack = val;
+  if (type==="grade") filterGrade = val;
+  if (type==="done") filterDone = val;
+  renderTabPanel();
+};
+
+window.toggleRace = function(name) {
+  const u = umas[currentId];
+  if (!u.trophies) u.trophies = {};
+  u.trophies[name] = !u.trophies[name];
+  renderTabPanel();
+  saveUma(currentId);
+};
+
+window.openEditModal = function() {
+  const u = umas[currentId];
+  const s = u.stats||{}, a = u.aptitudes||{};
+  showModal(`
+    <h2>Modifier ${escapeHtml(u.name)}</h2>
+    <div class="field"><label>Nom</label><input type="text" id="editName" style="width:100%" value="${escapeAttr(u.name)}"></div>
+    <div class="field-row">
+      <div class="field"><label>Couleur</label><input type="color" id="editColor" value="${u.color||'#4a6fa5'}"></div>
+      <div class="field" style="flex:2"><label>URL image (perso)</label><input type="text" id="editImg" style="width:100%" value="${escapeAttr(u.imageUrl||'')}" placeholder="https://..."></div>
+    </div>
+    <div class="field-row">
+      ${["speed","stamina","power","guts","wit"].map(k=>`
+        <div class="field"><label>${({speed:"Vitesse",stamina:"Endurance",power:"Puissance",guts:"VE",wit:"Sagesse"})[k]}</label>
+        <input type="number" id="stat_${k}" value="${s[k]||0}" style="width:100%"></div>
+      `).join("")}
+    </div>
+    <div class="field-row">
+      ${["turf","dirt","short","mile","medium","long","front","pace","late","end"].map(k=>`
+        <div class="field"><label>${({turf:"Turf",dirt:"Dirt",short:"Sprint",mile:"Mile",medium:"Medium",long:"Long",front:"Front",pace:"Pace",late:"Late",end:"End"})[k]}</label>
+        <select id="apt_${k}" style="width:100%">${APT_LETTERS.map(l=>`<option ${a[k]===l?'selected':''}>${l}</option>`).join("")}</select></div>
+      `).join("")}
+    </div>
+  `, () => {
+    const name = el("editName").value.trim();
+    if (!name) return false;
+    u.name = name;
+    u.color = el("editColor").value;
+    u.imageUrl = el("editImg").value.trim();
+    u.stats = {};
+    ["speed","stamina","power","guts","wit"].forEach(k => u.stats[k] = parseInt(el("stat_"+k).value)||0);
+    u.aptitudes = {};
+    ["turf","dirt","short","mile","medium","long","front","pace","late","end"].forEach(k => u.aptitudes[k] = el("apt_"+k).value);
+    saveUma(currentId);
+    render();
+    return true;
+  });
+};
+
+window.deleteUma = function() {
+  if (!confirm(`Supprimer ${umas[currentId].name} ? (irréversible)`)) return;
+  delete umas[currentId];
+  view = "home";
   render();
-  saveState();
-});
+};
 
-el("addUmaBtn").addEventListener("click", () => {
-  const name = prompt("Nom de l'Uma à ajouter :");
-  if (name && name.trim() && !umas.includes(name.trim())) {
-    umas.push(name.trim());
-    currentUma = name.trim();
-    renderUmaSelect();
-    render();
-    saveState();
-  }
-});
+function showModal(bodyHtml, onSave) {
+  const wrap = document.createElement("div");
+  wrap.className = "modal-backdrop";
+  wrap.innerHTML = `<div class="modal">${bodyHtml}<div class="modal-actions"><button class="ghost" id="modalCancel">Annuler</button><button id="modalSave">Enregistrer</button></div></div>`;
+  document.body.appendChild(wrap);
+  wrap.querySelector("#modalCancel").onclick = () => wrap.remove();
+  wrap.querySelector("#modalSave").onclick = () => { if (onSave()) wrap.remove(); };
+}
 
-document.querySelectorAll(".chip[data-track]").forEach(chip => {
-  chip.addEventListener("click", () => {
-    document.querySelectorAll(".chip[data-track]").forEach(c => c.classList.remove("active"));
-    chip.classList.add("active");
-    filterTrack = chip.dataset.track;
-    render();
-  });
-});
-document.querySelectorAll(".chip[data-grade]").forEach(chip => {
-  chip.addEventListener("click", () => {
-    document.querySelectorAll(".chip[data-grade]").forEach(c => c.classList.remove("active"));
-    chip.classList.add("active");
-    filterGrade = chip.dataset.grade;
-    render();
-  });
-});
-document.querySelectorAll(".chip[data-done]").forEach(chip => {
-  chip.addEventListener("click", () => {
-    document.querySelectorAll(".chip[data-done]").forEach(c => c.classList.remove("active"));
-    chip.classList.add("active");
-    filterDone = chip.dataset.done;
-    render();
-  });
-});
+function escapeHtml(s) { return (s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function escapeAttr(s) { return escapeHtml(s).replace(/`/g,"&#96;"); }
 
-// -------- Init --------
-(async function init() {
-  await loadState();
-  renderUmaSelect();
+window.addEventListener("firebase-ready", async () => {
+  if (accessCode) await loadAll();
   render();
-})();
+});
+setTimeout(() => { if (!document.getElementById("view") && !document.getElementById("codeInput")) render(); }, 800);
 </script>
 </body>
 </html>
