@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Suivi Trophées - Uma Musume</title>
+<style>
+  :root {
+    --bg: #fdfaf5;
+    --card: #ffffff;
+    --border: #e4dcc8;
+    --turf: #4c8c4a;
+    --turf-bg: #eaf5ea;
+    --dirt: #a06a3a;
+    --dirt-bg: #f5ece0;
+    --g1: #d4a017;
+    --g2: #8c8c8c;
+    --g3: #a05a2c;
+    --accent: #e85d75;
+    --text: #3a332a;
+    --muted: #8a8072;
+    --done-bg: #e6f4e8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", "Hiragino Sans", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px;
+  }
+  h1 {
+    font-size: 1.4rem;
+    margin: 0 0 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 16px; }
+
+  .topbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  select, input[type=text] {
+    font-size: 0.95rem;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+  }
+  select#umaSelect { font-weight: 600; min-width: 180px; }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: var(--accent);
+    color: white;
+  }
+  button.secondary {
+    background: #fff;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  .progress-wrap {
+    flex: 1;
+    min-width: 180px;
+  }
+  .progress-bar {
+    height: 10px;
+    background: var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #f2a5b3);
+    transition: width 0.3s;
+  }
+  .progress-label { font-size: 0.78rem; color: var(--muted); }
+
+  .filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .chip {
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: var(--muted);
+  }
+  .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .track-section { margin-bottom: 22px; }
+  .track-header {
+    font-size: 1.05rem;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    display: inline-block;
+  }
+  .track-header.turf { background: var(--turf-bg); color: var(--turf); }
+  .track-header.dirt { background: var(--dirt-bg); color: var(--dirt); }
+
+  .dist-group { margin-bottom: 14px; margin-left: 4px; }
+  .dist-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 10px 0 6px 0;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 4px;
+  }
+
+  .race-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 8px;
+  }
+  .race-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 11px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 0.85rem;
+    transition: background 0.15s, opacity 0.15s;
+    cursor: pointer;
+  }
+  .race-card.done {
+    background: var(--done-bg);
+    border-color: #b9ddc0;
+  }
+  .race-card.done .race-name { text-decoration: line-through; opacity: 0.65; }
+  .race-card input { pointer-events: none; width: 16px; height: 16px; flex-shrink: 0; }
+  .race-name { font-weight: 600; flex: 1; }
+  .grade-badge {
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 5px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .grade-badge.G1 { background: var(--g1); }
+  .grade-badge.G2 { background: var(--g2); }
+  .grade-badge.G3 { background: var(--g3); }
+
+  .empty-msg {
+    color: var(--muted);
+    font-size: 0.85rem;
+    padding: 20px;
+    text-align: center;
+  }
+  #status {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+</style>
+</head>
+<body>
+
+<h1>🏆 Suivi Trophées par Uma</h1>
+<div class="subtitle">Coche les courses gagnées (G1/G2/G3) — trié par Piste → Distance → Groupe</div>
+
+<div class="topbar">
+  <select id="umaSelect"></select>
+  <button class="secondary" id="addUmaBtn">+ Ajouter une Uma</button>
+  <div class="progress-wrap">
+    <div class="progress-label" id="progressLabel">0 / 0 trophées</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+  <span id="status"></span>
+</div>
+
+<div class="filters">
+  <span class="chip active" data-track="all">Tout</span>
+  <span class="chip" data-track="Turf">🌱 Turf</span>
+  <span class="chip" data-track="Dirt">🟤 Dirt</span>
+  <span class="chip" style="margin-left:14px" data-grade="all">Tous grades</span>
+  <span class="chip" data-grade="G1">G1</span>
+  <span class="chip" data-grade="G2">G2</span>
+  <span class="chip" data-grade="G3">G3</span>
+  <span class="chip" style="margin-left:14px" data-done="all">Tout afficher</span>
+  <span class="chip" data-done="todo">Manquantes seulement</span>
+</div>
+
+<div id="content"></div>
+
+<script>
+// -------- Race database (Piste, Distance, Groupe) --------
+// Distance order: Sprint(~1000-1400) < Mile(~1400-1800) < Medium(~1800-2400) < Long(2400+)
+const RACES = [
+// TURF - SPRINT
+{n:"Hakodate Junior Stakes", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Kokura Junior Stakes", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Keio Hai Junior Stakes", t:"Turf", d:"Sprint", g:"G2"},
+{n:"Fantasy Stakes", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Fillies' Revue", t:"Turf", d:"Sprint", g:"G2"},
+{n:"Falcon Stakes", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Aoi Stakes", t:"Turf", d:"Sprint", g:"G3"},
+{n:"CBC Sho", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Ibis Summer Dash", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Kitakyushu Kinen", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Keeneland Cup", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Centaur Stakes", t:"Turf", d:"Sprint", g:"G2"},
+{n:"Sprinters Stakes", t:"Turf", d:"Sprint", g:"G1"},
+{n:"Swan Stakes", t:"Turf", d:"Sprint", g:"G2"},
+{n:"Keihan Hai", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Silk Road Stakes", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Kyoto Umamusume Stakes", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Hankyu Hai", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Takamatsunomiya Kinen", t:"Turf", d:"Sprint", g:"G1"},
+{n:"Ocean Stakes", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Keio Hai Spring Cup", t:"Turf", d:"Sprint", g:"G2"},
+{n:"Hakodate Sprint Stakes", t:"Turf", d:"Sprint", g:"G3"},
+{n:"Hanshin Cup", t:"Turf", d:"Sprint", g:"G2"},
+// TURF - MILE
+{n:"Niigata Junior Stakes", t:"Turf", d:"Mile", g:"G3"},
+{n:"Sapporo Junior Stakes", t:"Turf", d:"Mile", g:"G3"},
+{n:"Saudi Arabia Royal Cup", t:"Turf", d:"Mile", g:"G3"},
+{n:"Artemis Stakes", t:"Turf", d:"Mile", g:"G3"},
+{n:"Daily Hai Junior Stakes", t:"Turf", d:"Mile", g:"G2"},
+{n:"Tokyo Sports Hai Junior Stakes", t:"Turf", d:"Mile", g:"G3"},
+{n:"Hanshin Juvenile Fillies", t:"Turf", d:"Mile", g:"G1"},
+{n:"Asahi Hai Futurity Stakes", t:"Turf", d:"Mile", g:"G1"},
+{n:"Shinzan Kinen", t:"Turf", d:"Mile", g:"G3"},
+{n:"Fairy Stakes", t:"Turf", d:"Mile", g:"G3"},
+{n:"Kisaragi Sho", t:"Turf", d:"Mile", g:"G3"},
+{n:"Queen Cup", t:"Turf", d:"Mile", g:"G3"},
+{n:"Kyodo News Hai", t:"Turf", d:"Mile", g:"G3"},
+{n:"Tulip Sho", t:"Turf", d:"Mile", g:"G2"},
+{n:"Spring Stakes", t:"Turf", d:"Mile", g:"G2"},
+{n:"Flower Cup", t:"Turf", d:"Mile", g:"G3"},
+{n:"Mainichi Hai", t:"Turf", d:"Mile", g:"G3"},
+{n:"New Zealand Trophy", t:"Turf", d:"Mile", g:"G2"},
+{n:"Arlington Cup", t:"Turf", d:"Mile", g:"G3"},
+{n:"Oka Sho", t:"Turf", d:"Mile", g:"G1"},
+{n:"NHK Mile Cup", t:"Turf", d:"Mile", g:"G1"},
+{n:"Yasuda Kinen", t:"Turf", d:"Mile", g:"G1"},
+{n:"Epsom Cup", t:"Turf", d:"Mile", g:"G3"},
+{n:"Radio Nikkei Sho", t:"Turf", d:"Mile", g:"G3"},
+{n:"Chukyo Kinen", t:"Turf", d:"Mile", g:"G3"},
+{n:"Queen Stakes", t:"Turf", d:"Mile", g:"G3"},
+{n:"Sekiya Kinen", t:"Turf", d:"Mile", g:"G3"},
+{n:"Rose Stakes", t:"Turf", d:"Mile", g:"G2"},
+{n:"Keisei Hai Autumn Handicap", t:"Turf", d:"Mile", g:"G3"},
+{n:"Mainichi Okan", t:"Turf", d:"Mile", g:"G2"},
+{n:"Fuchu Umamusume Stakes", t:"Turf", d:"Mile", g:"G2"},
+{n:"Fuji Stakes", t:"Turf", d:"Mile", g:"G2"},
+{n:"Mile Championship", t:"Turf", d:"Mile", g:"G1"},
+{n:"Nakayama Umamusume Stakes", t:"Turf", d:"Mile", g:"G3"},
+{n:"Turquoise Stakes", t:"Turf", d:"Mile", g:"G3"},
+{n:"Kyoto Kimpai", t:"Turf", d:"Mile", g:"G3"},
+{n:"Nakayama Kimpai", t:"Turf", d:"Mile", g:"G3" },
+{n:"Tokai Stakes", t:"Turf", d:"Mile", g:"G2"},
+{n:"American JCC (Jockey Club Cup)", t:"Turf", d:"Mile", g:"G2"},
+{n:"Tokyo Shimbun Hai", t:"Turf", d:"Mile", g:"G3"},
+{n:"Nakayama Kinen", t:"Turf", d:"Mile", g:"G2"},
+{n:"Kokura Daishoten", t:"Turf", d:"Mile", g:"G3"},
+{n:"Lord Derby Challenge Trophy", t:"Turf", d:"Mile", g:"G3"},
+{n:"Milers Cup (Yomiuri)", t:"Turf", d:"Mile", g:"G2"},
+{n:"Fukushima Umamusume Stakes", t:"Turf", d:"Mile", g:"G3"},
+{n:"Hanshin Umamusume Stakes", t:"Turf", d:"Mile", g:"G2"},
+// TURF - MEDIUM
+{n:"Kyoto Junior Stakes", t:"Turf", d:"Medium", g:"G3"},
+{n:"Hopeful Stakes", t:"Turf", d:"Medium", g:"G1"},
+{n:"Keisei Hai", t:"Turf", d:"Medium", g:"G3"},
+{n:"Yayoi Sho", t:"Turf", d:"Medium", g:"G2"},
+{n:"Satsuki Sho", t:"Turf", d:"Medium", g:"G1"},
+{n:"Flora Stakes", t:"Turf", d:"Medium", g:"G2"},
+{n:"Aoba Sho", t:"Turf", d:"Medium", g:"G2"},
+{n:"Kyoto Shimbun Hai", t:"Turf", d:"Medium", g:"G2"},
+{n:"Japanese Oaks", t:"Turf", d:"Medium", g:"G1"},
+{n:"Japanese Derby (Tokyo Yushun)", t:"Turf", d:"Medium", g:"G1"},
+{n:"Naruo Kinen", t:"Turf", d:"Medium", g:"G3"},
+{n:"Mermaid Stakes", t:"Turf", d:"Medium", g:"G3"},
+{n:"Takarazuka Kinen", t:"Turf", d:"Medium", g:"G1"},
+{n:"Tanabata Sho", t:"Turf", d:"Medium", g:"G3"},
+{n:"Hakodate Kinen", t:"Turf", d:"Medium", g:"G3"},
+{n:"Kokura Kinen", t:"Turf", d:"Medium", g:"G3"},
+{n:"Sapporo Kinen", t:"Turf", d:"Medium", g:"G2"},
+{n:"Niigata Kinen", t:"Turf", d:"Medium", g:"G3"},
+{n:"Shion Stakes", t:"Turf", d:"Medium", g:"G3"},
+{n:"St. Lite Kinen", t:"Turf", d:"Medium", g:"G2"},
+{n:"Kobe Shimbun Hai", t:"Turf", d:"Medium", g:"G2"},
+{n:"All Comers", t:"Turf", d:"Medium", g:"G2"},
+{n:"Kyoto Daishoten", t:"Turf", d:"Medium", g:"G2"},
+{n:"Shuka Sho", t:"Turf", d:"Medium", g:"G1"},
+{n:"Tenno Sho (Autumn)", t:"Turf", d:"Medium", g:"G1"},
+{n:"Fukushima Kinen", t:"Turf", d:"Medium", g:"G3"},
+{n:"Queen Elizabeth II Cup", t:"Turf", d:"Medium", g:"G1"},
+{n:"Japan Cup", t:"Turf", d:"Medium", g:"G1"},
+{n:"Challenge Cup", t:"Turf", d:"Medium", g:"G3"},
+{n:"Chunichi Shimbun Hai", t:"Turf", d:"Medium", g:"G3"},
+{n:"Nikkei Shinshun Hai", t:"Turf", d:"Medium", g:"G2"},
+{n:"Aichi Hai", t:"Turf", d:"Medium", g:"G3"},
+{n:"Kyoto Kinen", t:"Turf", d:"Medium", g:"G2"},
+{n:"Kinko Sho", t:"Turf", d:"Medium", g:"G2"},
+{n:"Osaka Hai", t:"Turf", d:"Medium", g:"G1"},
+{n:"Niigata Daishoten", t:"Turf", d:"Medium", g:"G3"},
+// TURF - LONG
+{n:"Diamond Stakes", t:"Turf", d:"Long", g:"G3"},
+{n:"Kikuka Sho", t:"Turf", d:"Long", g:"G1"},
+{n:"Copa Republica Argentina", t:"Turf", d:"Long", g:"G2"},
+{n:"Stayers Stakes", t:"Turf", d:"Long", g:"G2"},
+{n:"Arima Kinen", t:"Turf", d:"Long", g:"G1"},
+{n:"Tenno Sho (Spring)", t:"Turf", d:"Long", g:"G1"},
+{n:"Meguro Kinen", t:"Turf", d:"Long", g:"G2"},
+{n:"Hanshin Daishoten", t:"Turf", d:"Long", g:"G2"},
+{n:"Nikkei Sho", t:"Turf", d:"Long", g:"G2"},
+// DIRT - SPRINT
+{n:"Procyon Stakes", t:"Dirt", d:"Sprint", g:"G3"},
+{n:"JBC Sprint", t:"Dirt", d:"Sprint", g:"G1"},
+{n:"Capella Stakes", t:"Dirt", d:"Sprint", g:"G3"},
+{n:"Negishi Stakes", t:"Dirt", d:"Sprint", g:"G3"},
+// DIRT - MILE
+{n:"Unicorn Stakes", t:"Dirt", d:"Mile", g:"G3"},
+{n:"Leopard Stakes", t:"Dirt", d:"Mile", g:"G3"},
+{n:"Elm Stakes", t:"Dirt", d:"Mile", g:"G3"},
+{n:"Sirius Stakes", t:"Dirt", d:"Mile", g:"G3"},
+{n:"JBC Ladies' Classic", t:"Dirt", d:"Mile", g:"G1"},
+{n:"Miyako Stakes", t:"Dirt", d:"Mile", g:"G3"},
+{n:"Musashino Stakes", t:"Dirt", d:"Mile", g:"G3"},
+{n:"Champions Cup", t:"Dirt", d:"Mile", g:"G1"},
+{n:"March Stakes", t:"Dirt", d:"Mile", g:"G3"},
+{n:"Tokai Stakes (Dirt)", t:"Dirt", d:"Mile", g:"G2"},
+{n:"Antares Stakes", t:"Dirt", d:"Mile", g:"G3"},
+{n:"February Stakes", t:"Dirt", d:"Mile", g:"G1"},
+// DIRT - MEDIUM
+{n:"Japan Dirt Derby", t:"Dirt", d:"Medium", g:"G1"},
+{n:"JBC Classic", t:"Dirt", d:"Medium", g:"G1"},
+{n:"Tokyo Daishoten", t:"Dirt", d:"Medium", g:"G1"},
+{n:"Heian Stakes", t:"Dirt", d:"Medium", g:"G3"},
+{n:"Teio Sho", t:"Dirt", d:"Medium", g:"G1"},
+];
+
+const DIST_ORDER = ["Sprint","Mile","Medium","Long"];
+const TRACK_ORDER = ["Turf","Dirt"];
+
+// -------- State --------
+let umas = ["Mayano Top Gun"];
+let currentUma = "Mayano Top Gun";
+let progress = {}; // {umaName: {raceName: true}}
+let filterTrack = "all";
+let filterGrade = "all";
+let filterDone = "all";
+
+const el = id => document.getElementById(id);
+
+async function loadState() {
+  try {
+    const res = await window.storage.get("uma_trophy_state");
+    if (res && res.value) {
+      const parsed = JSON.parse(res.value);
+      umas = parsed.umas || umas;
+      currentUma = parsed.currentUma || currentUma;
+      progress = parsed.progress || {};
+    }
+  } catch(e) { /* first run, no data yet */ }
+}
+
+async function saveState() {
+  el("status").textContent = "sauvegarde...";
+  try {
+    await window.storage.set("uma_trophy_state", JSON.stringify({umas, currentUma, progress}));
+    el("status").textContent = "✓ sauvegardé";
+    setTimeout(()=> el("status").textContent = "", 1200);
+  } catch(e) {
+    el("status").textContent = "erreur de sauvegarde";
+  }
+}
+
+function renderUmaSelect() {
+  const sel = el("umaSelect");
+  sel.innerHTML = "";
+  umas.forEach(u => {
+    const opt = document.createElement("option");
+    opt.value = u; opt.textContent = u;
+    if (u === currentUma) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function toggleRace(name) {
+  if (!progress[currentUma]) progress[currentUma] = {};
+  progress[currentUma][name] = !progress[currentUma][name];
+  render();
+  saveState();
+}
+
+function render() {
+  const content = el("content");
+  content.innerHTML = "";
+  const doneMap = progress[currentUma] || {};
+
+  let filtered = RACES.filter(r => {
+    if (filterTrack !== "all" && r.t !== filterTrack) return false;
+    if (filterGrade !== "all" && r.g !== filterGrade) return false;
+    if (filterDone === "todo" && doneMap[r.n]) return false;
+    return true;
+  });
+
+  let totalCount = RACES.length;
+  let doneCount = RACES.filter(r => doneMap[r.n]).length;
+  el("progressLabel").textContent = `${doneCount} / ${totalCount} trophées obtenus (${currentUma})`;
+  el("progressFill").style.width = totalCount ? (doneCount/totalCount*100)+"%" : "0%";
+
+  if (filtered.length === 0) {
+    content.innerHTML = `<div class="empty-msg">Aucune course ne correspond aux filtres 🎉</div>`;
+    return;
+  }
+
+  TRACK_ORDER.forEach(track => {
+    const trackRaces = filtered.filter(r => r.t === track);
+    if (trackRaces.length === 0) return;
+    const section = document.createElement("div");
+    section.className = "track-section";
+    const header = document.createElement("div");
+    header.className = "track-header " + track.toLowerCase();
+    header.textContent = (track === "Turf" ? "🌱 " : "🟤 ") + track;
+    section.appendChild(header);
+
+    DIST_ORDER.forEach(dist => {
+      const distRaces = trackRaces.filter(r => r.d === dist)
+        .sort((a,b) => (a.g > b.g ? 1 : -1));
+      if (distRaces.length === 0) return;
+      const distGroup = document.createElement("div");
+      distGroup.className = "dist-group";
+      const distTitle = document.createElement("div");
+      distTitle.className = "dist-title";
+      const doneInDist = distRaces.filter(r => doneMap[r.n]).length;
+      distTitle.textContent = `${dist} (${doneInDist}/${distRaces.length})`;
+      distGroup.appendChild(distTitle);
+
+      const grid = document.createElement("div");
+      grid.className = "race-grid";
+      distRaces.forEach(r => {
+        const isDone = !!doneMap[r.n];
+        const card = document.createElement("div");
+        card.className = "race-card" + (isDone ? " done" : "");
+        card.innerHTML = `
+          <input type="checkbox" ${isDone ? "checked" : ""}>
+          <span class="race-name">${r.n}</span>
+          <span class="grade-badge ${r.g}">${r.g}</span>
+        `;
+        card.onclick = () => toggleRace(r.n);
+        grid.appendChild(card);
+      });
+      distGroup.appendChild(grid);
+      section.appendChild(distGroup);
+    });
+    content.appendChild(section);
+  });
+}
+
+// -------- Events --------
+el("umaSelect").addEventListener("change", e => {
+  currentUma = e.target.value;
+  render();
+  saveState();
+});
+
+el("addUmaBtn").addEventListener("click", () => {
+  const name = prompt("Nom de l'Uma à ajouter :");
+  if (name && name.trim() && !umas.includes(name.trim())) {
+    umas.push(name.trim());
+    currentUma = name.trim();
+    renderUmaSelect();
+    render();
+    saveState();
+  }
+});
+
+document.querySelectorAll(".chip[data-track]").forEach(chip => {
+  chip.addEventListener("click", () => {
+    document.querySelectorAll(".chip[data-track]").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    filterTrack = chip.dataset.track;
+    render();
+  });
+});
+document.querySelectorAll(".chip[data-grade]").forEach(chip => {
+  chip.addEventListener("click", () => {
+    document.querySelectorAll(".chip[data-grade]").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    filterGrade = chip.dataset.grade;
+    render();
+  });
+});
+document.querySelectorAll(".chip[data-done]").forEach(chip => {
+  chip.addEventListener("click", () => {
+    document.querySelectorAll(".chip[data-done]").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    filterDone = chip.dataset.done;
+    render();
+  });
+});
+
+// -------- Init --------
+(async function init() {
+  await loadState();
+  renderUmaSelect();
+  render();
+})();
+</script>
+</body>
+</html>
